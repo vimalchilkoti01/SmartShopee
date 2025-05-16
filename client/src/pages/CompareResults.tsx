@@ -19,8 +19,10 @@ const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
   // Extract query parameter from URL
   const getQueryParam = () => {
     try {
-      const searchParams = new URLSearchParams(location.split('?')[1] || '');
-      return searchParams.get('q') || "";
+      // Try using window.location.search for more reliable query param extraction
+      const urlParams = new URLSearchParams(window.location.search);
+      const queryParam = urlParams.get('q');
+      return queryParam || "";
     } catch (error) {
       console.error("Error parsing search params:", error);
       return "";

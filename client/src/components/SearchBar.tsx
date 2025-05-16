@@ -29,13 +29,20 @@ const SearchBar = ({ onSearch }: SearchBarProps) => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
+      // Send the search query to the parent component
       onSearch(searchInput.trim());
+      
+      // Navigate directly to the search results page with the query
+      window.location.href = `/search?q=${encodeURIComponent(searchInput.trim())}`;
     }
   };
 
   const handlePopularSearch = (term: string) => {
     setSearchInput(term);
     onSearch(term);
+    
+    // Navigate directly to the search results page with the query
+    window.location.href = `/search?q=${encodeURIComponent(term)}`;
   };
 
   return (

@@ -15,6 +15,7 @@ function App() {
         <Switch>
           <Route path="/" component={() => <Home setIsLoading={setIsLoading} />} />
           <Route path="/compare" component={() => <CompareResults setIsLoading={setIsLoading} />} />
+          <Route path="/search" component={() => <CompareResults setIsLoading={setIsLoading} />} />
           <Route component={NotFound} />
         </Switch>
       </Layout>
