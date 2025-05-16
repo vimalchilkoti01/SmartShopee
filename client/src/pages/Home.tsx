@@ -16,9 +16,14 @@ const Home = ({ setIsLoading }: HomeProps) => {
   const [, setLocation] = useLocation();
 
   const onSearch = async (query: string) => {
-    const searchResults = await handleSearch(query);
-    if (searchResults) {
-      setLocation(`/compare?q=${encodeURIComponent(query)}`);
+    try {
+      const searchResults = await handleSearch(query);
+      if (searchResults) {
+        console.log("Search results:", searchResults);
+        setLocation(`/compare?q=${encodeURIComponent(query)}`);
+      }
+    } catch (error) {
+      console.error("Error during search:", error);
     }
   };
 

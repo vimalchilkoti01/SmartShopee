@@ -13,9 +13,9 @@ interface CompareResultsProps {
 }
 
 const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
-  const search = useSearch();
+  const params = useSearch();
   const [, setLocation] = useLocation();
-  const query = search.q ? decodeURIComponent(search.q) : "";
+  const query = params.q ? decodeURIComponent(params.q as string) : "";
   const [sortOption, setSortOption] = useState("best-match");
 
   const { data, error, isLoading } = useQuery<{
@@ -25,6 +25,9 @@ const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
   }>({
     queryKey: [`/api/search?q=${encodeURIComponent(query)}`],
     enabled: !!query,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true,
+    staleTime: 60000, // 1 minute
   });
 
   useEffect(() => {
