@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useSearch } from "wouter";
+import { useLocation } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import ProductCard from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -13,10 +13,21 @@ interface CompareResultsProps {
 }
 
 const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
-  const params = useSearch();
-  const [, setLocation] = useLocation();
-  const query = params.q ? decodeURIComponent(params.q as string) : "";
+  const [location, setLocation] = useLocation();
   const [sortOption, setSortOption] = useState("best-match");
+  
+  // Extract query parameter from URL
+  const getQueryParam = () => {
+    try {
+      const searchParams = new URLSearchParams(location.split('?')[1] || '');
+      return searchParams.get('q') || "";
+    } catch (error) {
+      console.error("Error parsing search params:", error);
+      return "";
+    }
+  };
+  
+  const query = getQueryParam();
 
   const { data, error, isLoading } = useQuery<{
     query: string;
@@ -35,14 +46,22 @@ const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
     setIsLoading(isLoading);
   }, [isLoading, setIsLoading]);
 
+  // Redirect to home if no query
+  useEffect(() => {
+    if (!query) {
+      setLocation('/');
+    }
+  }, [query, setLocation]);
+
   if (!query) {
-    // Redirect to home if no query
-    setLocation('/');
     return null;
   }
 
+  // Sort products based on selected option
   const sortedProducts = data?.products
     ? [...data.products].sort((a, b) => {
+        if (!a.prices.length || !b.prices.length) return 0;
+        
         // Find the lowest price for each product
         const aMinPrice = Math.min(...a.prices.map(p => p.price));
         const bMinPrice = Math.min(...b.prices.map(p => p.price));
