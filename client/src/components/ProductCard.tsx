@@ -96,39 +96,56 @@ const ProductCard = ({ product }: ProductCardProps) => {
     );
   };
 
-  // Generate a buying recommendation
+  // Generate a buying recommendation - prioritizing price first, then rating, then delivery
   const getBuyingRecommendation = () => {
-    // If one store has the best price and rating, recommend it strongly
-    if (bestDeal.store.id === bestRating.store.id) {
-      return {
-        store: bestDeal.store.name,
-        reason: `Best overall choice with lowest price and highest rating`
-      };
-    }
-    
-    // If price difference between best price and best rating is small (< 5%), recommend best rating
-    const priceDifference = (bestRating.price - bestDeal.price) / bestDeal.price;
-    if (priceDifference < 0.05) {
-      return {
-        store: bestRating.store.name,
-        reason: `Slightly higher price but best customer ratings`
-      };
-    }
-    
-    // If best delivery is also best price or within 3% of best price, recommend it
-    const deliveryPriceDiff = (bestDelivery.price - bestDeal.price) / bestDeal.price;
-    if (bestDelivery.store.id === bestDeal.store.id || deliveryPriceDiff < 0.03) {
-      return {
-        store: bestDelivery.store.name,
-        reason: `Fastest delivery with competitive pricing`
-      };
-    }
-    
-    // Default to best price
-    return {
+    // Always start with the best price (lowest price store)
+    const recommendation = {
       store: bestDeal.store.name,
       reason: `Lowest price across all platforms`
     };
+    
+    // If two stores have very close prices (within 1%), consider other factors
+    const getSecondBestPrice = sortedPrices[1] || sortedPrices[0];
+    const priceDifference = (getSecondBestPrice.price - bestDeal.price) / bestDeal.price;
+    
+    // If price is almost the same, consider rating
+    if (priceDifference < 0.01) {
+      // Find best rated among the close-priced stores
+      const closelyPricedStores = sortedPrices.filter(p => 
+        (p.price - bestDeal.price) / bestDeal.price < 0.01
+      );
+      
+      const bestRatedAmongClose = [...closelyPricedStores].sort((a, b) => 
+        (b.rating || 0) - (a.rating || 0)
+      )[0];
+      
+      if (bestRatedAmongClose && bestRatedAmongClose.store.id !== bestDeal.store.id) {
+        return {
+          store: bestRatedAmongClose.store.name,
+          reason: `Similar price with better customer ratings`
+        };
+      }
+    }
+    
+    // If the best delivery store is close to the best price (within 2%), recommend it
+    const deliveryPriceDiff = (bestDelivery.price - bestDeal.price) / bestDeal.price;
+    if (deliveryPriceDiff < 0.02 && bestDelivery.store.id !== bestDeal.store.id) {
+      return {
+        store: bestDelivery.store.name,
+        reason: `Almost same price with faster delivery`
+      };
+    }
+    
+    // If the best deal and best rating are the same store, emphasize it
+    if (bestDeal.store.id === bestRating.store.id) {
+      return {
+        store: bestDeal.store.name,
+        reason: `Best overall value - lowest price and highest rating`
+      };
+    }
+    
+    // Default to best price if no other conditions are met
+    return recommendation;
   };
 
   // Use a placeholder image if the product image fails to load
