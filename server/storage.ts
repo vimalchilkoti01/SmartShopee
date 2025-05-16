@@ -193,25 +193,49 @@ export class MemStorage implements IStorage {
     const stores = await this.getAllStores();
     let basePrice = 0;
     
-    // Set realistic market prices based on product type
-    if (query.toLowerCase().includes('iphone 14')) {
-      basePrice = 7999900; // ₹79,999 for iPhone 14
+    // Set exact current market prices based on product type
+    if (query.toLowerCase().includes('iphone 14 pro')) {
+      basePrice = 11599000; // ₹1,15,990 for iPhone 14 Pro
+    } else if (query.toLowerCase().includes('iphone 14')) {
+      basePrice = 6999000; // ₹69,990 for iPhone 14
+    } else if (query.toLowerCase().includes('iphone 15 pro')) {
+      basePrice = 12990000; // ₹1,29,900 for iPhone 15 Pro
     } else if (query.toLowerCase().includes('iphone 15')) {
-      basePrice = 9999900; // ₹99,999 for iPhone 15 
+      basePrice = 7999000; // ₹79,990 for iPhone 15
+    } else if (query.toLowerCase().includes('samsung s23 ultra')) {
+      basePrice = 10499900; // ₹1,04,999 for Samsung S23 Ultra
     } else if (query.toLowerCase().includes('samsung s23')) {
       basePrice = 7499900; // ₹74,999 for Samsung S23
+    } else if (query.toLowerCase().includes('samsung s24 ultra')) {
+      basePrice = 12999900; // ₹1,29,999 for Samsung S24 Ultra
     } else if (query.toLowerCase().includes('samsung s24')) {
       basePrice = 8499900; // ₹84,999 for Samsung S24
-    } else if (query.toLowerCase().includes('pixel')) {
-      basePrice = 6999900; // ₹69,999 for Google Pixel
+    } else if (query.toLowerCase().includes('google pixel 8 pro')) {
+      basePrice = 9299900; // ₹92,999 for Google Pixel 8 Pro
+    } else if (query.toLowerCase().includes('google pixel 8')) {
+      basePrice = 6999900; // ₹69,999 for Google Pixel 8
+    } else if (query.toLowerCase().includes('playstation 5')) {
+      basePrice = 5499900; // ₹54,999 for PlayStation 5
+    } else if (query.toLowerCase().includes('xbox series x')) {
+      basePrice = 5499900; // ₹54,999 for Xbox Series X
     } else if (query.toLowerCase().includes('macbook air')) {
-      basePrice = 9999900; // ₹99,999 for MacBook Air
+      basePrice = 9999000; // ₹99,990 for MacBook Air
     } else if (query.toLowerCase().includes('macbook pro')) {
-      basePrice = 14999900; // ₹1,49,999 for MacBook Pro
+      basePrice = 16999000; // ₹1,69,990 for MacBook Pro
     } else if (query.toLowerCase().includes('dell xps')) {
-      basePrice = 11999900; // ₹1,19,999 for Dell XPS
+      basePrice = 12999000; // ₹1,29,990 for Dell XPS
+    } else if (query.toLowerCase().includes('lg oled')) {
+      basePrice = 13999000; // ₹1,39,990 for LG OLED TV
+    } else if (query.toLowerCase().includes('sony bravia')) {
+      basePrice = 11999000; // ₹1,19,990 for Sony Bravia TV
+    } else if (query.toLowerCase().includes('samsung qled')) {
+      basePrice = 9999000; // ₹99,990 for Samsung QLED TV
     } else if (query.toLowerCase().includes('tv') || query.toLowerCase().includes('television')) {
-      basePrice = 6999900; // ₹69,999 for a good TV
+      basePrice = 5499900; // ₹54,999 for a mid-range TV
+    } else if (query.toLowerCase().includes('airpods pro')) {
+      basePrice = 2499900; // ₹24,999 for AirPods Pro
+    } else if (query.toLowerCase().includes('sony wh-1000xm5')) {
+      basePrice = 2999900; // ₹29,999 for Sony WH-1000XM5
     } else if (query.toLowerCase().includes('headphone') || query.toLowerCase().includes('earbuds')) {
       basePrice = 1499900; // ₹14,999 for quality headphones
     } else {
@@ -265,9 +289,9 @@ export class MemStorage implements IStorage {
         ];
       }
       
-      // Minor price variation between stores (more realistic)
-      // Small random adjustment up to ±3,000 to make it realistic
-      const priceVariation = Math.floor((Math.random() * 600000) - 300000);
+      // Apply minor price variations (smaller variations for more realistic pricing)
+      // Smaller random adjustment up to ±1,000 to make it realistic but maintain proper market price ranges
+      const priceVariation = Math.floor((Math.random() * 200000) - 100000);
       storePrice = storePrice + priceVariation;
       
       // Calculate original price (8-15% higher than sale price)
