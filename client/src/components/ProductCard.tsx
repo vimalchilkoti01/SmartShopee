@@ -49,7 +49,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
   };
 
   // Render star rating
-  const renderRating = (rating: number = 0) => {
+  const renderRating = (rating: number | null | undefined = 0) => {
     // Convert from 0-50 scale to 0-5 scale
     const ratingValue = rating || 0; // Handle null or undefined
     const stars = ratingValue / 10;
@@ -98,9 +98,9 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <div className="flex-grow">
             <h3 className="text-lg font-semibold">{product.name}</h3>
             <div className="flex items-center mt-1">
-              {renderRating(bestDeal.rating)}
+              {renderRating(bestDeal.rating || 0)}
               <span className="ml-2 text-sm text-gray-600">
-                {(bestDeal.rating / 10).toFixed(1)} ({bestDeal.reviewCount?.toLocaleString() || 0} reviews)
+                {((bestDeal.rating || 0) / 10).toFixed(1)} ({bestDeal.reviewCount?.toLocaleString() || 0} reviews)
               </span>
             </div>
             

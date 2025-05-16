@@ -11,17 +11,15 @@ const Header = () => {
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         <div className="flex items-center space-x-2">
-          <Link href="/">
-            <a className="text-2xl font-bold text-primary flex items-center">
-              <BoltIcon className="text-accent mr-1 h-6 w-6" />
-              beingByte
-            </a>
+          <Link href="/" className="text-2xl font-bold text-primary flex items-center">
+            <BoltIcon className="text-accent mr-1 h-6 w-6" />
+            beingByte
           </Link>
         </div>
         
         <nav className="hidden md:flex space-x-8">
-          <Link href="/">
-            <a className="font-medium hover:text-primary transition">Home</a>
+          <Link href="/" className="font-medium hover:text-primary transition">
+            Home
           </Link>
           <a href="#how-it-works" className="font-medium hover:text-primary transition">
             How It Works
@@ -50,10 +48,8 @@ const Header = () => {
             </SheetTrigger>
             <SheetContent>
               <div className="flex flex-col space-y-4 mt-8">
-                <Link href="/">
-                  <a className="font-medium px-4 py-2 rounded-md hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
-                    Home
-                  </a>
+                <Link href="/" className="font-medium px-4 py-2 rounded-md hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
+                  Home
                 </Link>
                 <a href="#how-it-works" className="font-medium px-4 py-2 rounded-md hover:bg-gray-100" onClick={() => setMobileMenuOpen(false)}>
                   How It Works
