@@ -42,9 +42,24 @@ const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
   });
 
   useEffect(() => {
-    // Update the parent loading state
-    setIsLoading(isLoading);
+    // Update the parent loading state (with a short delay to ensure data is processed)
+    if (isLoading) {
+      setIsLoading(true);
+    } else {
+      // Small delay to ensure the data is processed
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+      return () => clearTimeout(timer);
+    }
   }, [isLoading, setIsLoading]);
+  
+  // Log search results for debugging
+  useEffect(() => {
+    if (data) {
+      console.log("Search results:", data);
+    }
+  }, [data]);
 
   // Redirect to home if no query
   useEffect(() => {
@@ -167,7 +182,7 @@ const CompareResults = ({ setIsLoading }: CompareResultsProps) => {
         )}
 
         {/* Results grid */}
-        {!isLoading && !error && sortedProducts && (
+        {!isLoading && !error && data?.products && (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {sortedProducts.map((product) => (
