@@ -45,9 +45,18 @@ const ProductCard = ({ product }: ProductCardProps) => {
       : price.discount || 0;
   };
   
-  // Format price in rupees
+  // Format price in rupees with proper formatting for large numbers
   const formatPrice = (price: number) => {
-    return `₹${(price / 100).toLocaleString('en-IN')}`;
+    const priceInRupees = price / 100;
+    
+    // Format with proper Indian number formatting (e.g., 1,49,999)
+    const formatter = new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    });
+    
+    return formatter.format(priceInRupees);
   };
 
   // Get store icon

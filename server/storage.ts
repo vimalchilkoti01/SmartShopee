@@ -189,22 +189,33 @@ export class MemStorage implements IStorage {
     });
     
     // Create prices for all 4 major platforms (not Myntra)
-    // Use more realistic prices based on product type
+    // Use realistic market prices based on product type
     const stores = await this.getAllStores();
     let basePrice = 0;
     
-    // Set appropriate base price range based on product type
-    if (query.toLowerCase().includes('iphone') || query.toLowerCase().includes('samsung') || 
-        query.toLowerCase().includes('pixel')) {
-      basePrice = 70000 + Math.floor(Math.random() * 30000); // Phones: 70k-100k
-    } else if (query.toLowerCase().includes('macbook') || query.toLowerCase().includes('laptop')) {
-      basePrice = 90000 + Math.floor(Math.random() * 50000); // Laptops: 90k-140k
+    // Set realistic market prices based on product type
+    if (query.toLowerCase().includes('iphone 14')) {
+      basePrice = 7999900; // ₹79,999 for iPhone 14
+    } else if (query.toLowerCase().includes('iphone 15')) {
+      basePrice = 9999900; // ₹99,999 for iPhone 15 
+    } else if (query.toLowerCase().includes('samsung s23')) {
+      basePrice = 7499900; // ₹74,999 for Samsung S23
+    } else if (query.toLowerCase().includes('samsung s24')) {
+      basePrice = 8499900; // ₹84,999 for Samsung S24
+    } else if (query.toLowerCase().includes('pixel')) {
+      basePrice = 6999900; // ₹69,999 for Google Pixel
+    } else if (query.toLowerCase().includes('macbook air')) {
+      basePrice = 9999900; // ₹99,999 for MacBook Air
+    } else if (query.toLowerCase().includes('macbook pro')) {
+      basePrice = 14999900; // ₹1,49,999 for MacBook Pro
+    } else if (query.toLowerCase().includes('dell xps')) {
+      basePrice = 11999900; // ₹1,19,999 for Dell XPS
     } else if (query.toLowerCase().includes('tv') || query.toLowerCase().includes('television')) {
-      basePrice = 40000 + Math.floor(Math.random() * 80000); // TVs: 40k-120k
+      basePrice = 6999900; // ₹69,999 for a good TV
     } else if (query.toLowerCase().includes('headphone') || query.toLowerCase().includes('earbuds')) {
-      basePrice = 10000 + Math.floor(Math.random() * 15000); // Audio: 10k-25k
+      basePrice = 1499900; // ₹14,999 for quality headphones
     } else {
-      basePrice = 25000 + Math.floor(Math.random() * 50000); // Other electronics: 25k-75k
+      basePrice = 4999900; // ₹49,999 default for electronics
     }
     
     // Only include Amazon, Flipkart, Croma, and Reliance Digital
@@ -217,7 +228,7 @@ export class MemStorage implements IStorage {
       // Each store has a different price strategy
       let storePrice = basePrice;
       let deliveryDays = "2-3 days";
-      let storeSpecificOffers = [];
+      let storeSpecificOffers: string[] = [];
       
       // Store-specific price variations and offers
       if (store.name === "Amazon") {
@@ -225,7 +236,7 @@ export class MemStorage implements IStorage {
         deliveryDays = "1-2 days";
         storeSpecificOffers = [
           "10% Instant Discount with HDFC Credit Cards",
-          "No-Cost EMI available",
+          "No-Cost EMI on 6 months",
           "Prime delivery available"
         ];
       } else if (store.name === "Flipkart") {
@@ -233,33 +244,41 @@ export class MemStorage implements IStorage {
         deliveryDays = "2-3 days";
         storeSpecificOffers = [
           "Extra 5% off with Flipkart Axis Bank Card",
-          "No-Cost EMI available", 
-          "SuperCoins Reward"
+          "No-Cost EMI from ₹3,750/month", 
+          "SuperCoins Reward on purchase"
         ];
       } else if (store.name === "Croma") {
         storePrice = basePrice + Math.floor(basePrice * 0.01); // Croma slightly more
         deliveryDays = "3-5 days";
         storeSpecificOffers = [
-          "Additional warranty available",
-          "Free installation",
-          "Exchange offer available"
+          "Additional 1-year warranty",
+          "Free home installation",
+          "Exchange bonus up to ₹10,000"
         ];
       } else if (store.name === "Reliance Digital") {
         storePrice = basePrice;
         deliveryDays = "3-4 days";
         storeSpecificOffers = [
-          "5% cashback with Reliance One",
-          "Free extended warranty",
-          "EMI starting ₹2,999/month"
+          "5% cashback with Reliance One membership",
+          "Free extended warranty worth ₹2,999",
+          "EMI starting at ₹2,999/month"
         ];
       }
       
-      // Add randomization to make it realistic
-      storePrice = storePrice + Math.floor((Math.random() * 2000) - 1000);
-      const originalPrice = storePrice + Math.floor(storePrice * (0.08 + Math.random() * 0.07)); // 8-15% markup
+      // Minor price variation between stores (more realistic)
+      // Small random adjustment up to ±3,000 to make it realistic
+      const priceVariation = Math.floor((Math.random() * 600000) - 300000);
+      storePrice = storePrice + priceVariation;
+      
+      // Calculate original price (8-15% higher than sale price)
+      const markup = 0.08 + (Math.random() * 0.07); // Between 8% and 15%
+      const originalPrice = Math.round(storePrice * (1 + markup));
+      
+      // Calculate discount percentage
       const discount = Math.floor((originalPrice - storePrice) / originalPrice * 100);
       
-      await this.createProductPrice({
+      // Create a new price record for this store
+      const priceRecord: any = {
         productId: product.id,
         storeId: store.id,
         price: storePrice,
@@ -269,9 +288,19 @@ export class MemStorage implements IStorage {
         reviewCount: 500 + Math.floor(Math.random() * 2000),
         url: `${store.website}/product/${product.id}`,
         inStock: true,
-        offers: storeSpecificOffers,
-        deliveryDays: deliveryDays
-      });
+        offers: storeSpecificOffers
+      };
+      
+      // Add to database
+      const createdPrice = await this.createProductPrice(priceRecord);
+      
+      // Update the price object post-creation to add the deliveryDays info
+      // This is a workaround since we're adding this field without schema migration
+      const priceWithDelivery = this.productPrices.get(createdPrice.id);
+      if (priceWithDelivery) {
+        (priceWithDelivery as any).deliveryDays = deliveryDays;
+        this.productPrices.set(createdPrice.id, priceWithDelivery);
+      }
     }));
     
     return product;
