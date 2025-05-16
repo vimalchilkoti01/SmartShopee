@@ -1,8 +1,10 @@
-import { ExternalLink, Star, StarHalf } from "lucide-react";
+import { ExternalLink, Star, StarHalf, Truck, Clock, Award, ShoppingBag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ProductWithPrices } from "@shared/schema";
 import { SiAmazon, SiFlipkart, SiShopify, SiShopee, SiBigcommerce } from "react-icons/si";
 import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ProductCardProps {
   product: ProductWithPrices;
@@ -16,14 +18,32 @@ const ProductCard = ({ product }: ProductCardProps) => {
     return null;
   }
 
-  // Sort prices to get the best deal first
-  const sortedPrices = [...product.prices].sort((a, b) => a.price - b.price);
+  // Filter to only include Amazon, Flipkart, Croma, and Reliance Digital
+  const validPlatforms = ['Amazon', 'Flipkart', 'Croma', 'Reliance Digital'];
+  const filteredPrices = product.prices.filter(price => 
+    validPlatforms.includes(price.store.name)
+  );
+  
+  // Sort prices to get the best deal first (lowest price)
+  const sortedPrices = [...filteredPrices].sort((a, b) => a.price - b.price);
+  
+  // Best overall deal is the cheapest
   const bestDeal = sortedPrices[0];
   
+  // Find best deal based on different factors
+  const bestRating = [...filteredPrices].sort((a, b) => (b.rating || 0) - (a.rating || 0))[0];
+  const bestDelivery = [...filteredPrices].sort((a, b) => {
+    const aDays = a.deliveryDays ? parseInt(a.deliveryDays.split('-')[0]) : 5;
+    const bDays = b.deliveryDays ? parseInt(b.deliveryDays.split('-')[0]) : 5;
+    return aDays - bDays;
+  })[0];
+  
   // Calculate discount percentage
-  const discountPercentage = bestDeal.originalPrice 
-    ? Math.floor((bestDeal.originalPrice - bestDeal.price) / bestDeal.originalPrice * 100) 
-    : bestDeal.discount || 0;
+  const getDiscountPercentage = (price: typeof bestDeal) => {
+    return price.originalPrice 
+      ? Math.floor((price.originalPrice - price.price) / price.originalPrice * 100) 
+      : price.discount || 0;
+  };
   
   // Format price in rupees
   const formatPrice = (price: number) => {
@@ -34,17 +54,15 @@ const ProductCard = ({ product }: ProductCardProps) => {
   const getStoreIcon = (name: string) => {
     switch (name.toLowerCase()) {
       case 'amazon':
-        return <SiAmazon className="h-5 mr-2" />;
+        return <SiAmazon className="h-5 w-5" />;
       case 'flipkart':
-        return <SiFlipkart className="h-5 mr-2" />;
-      case 'myntra':
-        return <SiShopify className="h-5 mr-2" />;
+        return <SiFlipkart className="h-5 w-5" />;
       case 'croma':
-        return <SiShopee className="h-5 mr-2" />;
+        return <SiShopee className="h-5 w-5" />;
       case 'reliance digital':
-        return <SiBigcommerce className="h-5 mr-2" />;
+        return <SiBigcommerce className="h-5 w-5" />;
       default:
-        return <SiBigcommerce className="h-5 mr-2" />;
+        return <ShoppingBag className="h-5 w-5" />;
     }
   };
 
@@ -69,22 +87,52 @@ const ProductCard = ({ product }: ProductCardProps) => {
     );
   };
 
+  // Generate a buying recommendation
+  const getBuyingRecommendation = () => {
+    // If one store has the best price and rating, recommend it strongly
+    if (bestDeal.store.id === bestRating.store.id) {
+      return {
+        store: bestDeal.store.name,
+        reason: `Best overall choice with lowest price and highest rating`
+      };
+    }
+    
+    // If price difference between best price and best rating is small (< 5%), recommend best rating
+    const priceDifference = (bestRating.price - bestDeal.price) / bestDeal.price;
+    if (priceDifference < 0.05) {
+      return {
+        store: bestRating.store.name,
+        reason: `Slightly higher price but best customer ratings`
+      };
+    }
+    
+    // If best delivery is also best price or within 3% of best price, recommend it
+    const deliveryPriceDiff = (bestDelivery.price - bestDeal.price) / bestDeal.price;
+    if (bestDelivery.store.id === bestDeal.store.id || deliveryPriceDiff < 0.03) {
+      return {
+        store: bestDelivery.store.name,
+        reason: `Fastest delivery with competitive pricing`
+      };
+    }
+    
+    // Default to best price
+    return {
+      store: bestDeal.store.name,
+      reason: `Lowest price across all platforms`
+    };
+  };
+
   // Use a placeholder image if the product image fails to load
   const handleImageError = () => {
     setImageError(true);
   };
 
   const placeholderImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23d1d5db' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
+  
+  const recommendation = getBuyingRecommendation();
 
   return (
-    <div className={`bg-white rounded-xl shadow-md overflow-hidden ${sortedPrices[0] === bestDeal ? 'border-2 border-secondary' : 'border border-gray-200'} relative`}>
-      {/* Best deal badge - only shown for the best deal */}
-      {sortedPrices[0] === bestDeal && (
-        <div className="absolute top-4 right-4 bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium">
-          Best Deal
-        </div>
-      )}
-      
+    <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
       <div className="p-6">
         <div className="flex items-start gap-4">
           {/* Product image */}
@@ -98,64 +146,116 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <div className="flex-grow">
             <h3 className="text-lg font-semibold">{product.name}</h3>
             <div className="flex items-center mt-1">
-              {renderRating(bestDeal.rating || 0)}
+              {renderRating(bestRating.rating || 0)}
               <span className="ml-2 text-sm text-gray-600">
-                {((bestDeal.rating || 0) / 10).toFixed(1)} ({bestDeal.reviewCount?.toLocaleString() || 0} reviews)
+                {((bestRating.rating || 0) / 10).toFixed(1)} ({bestRating.reviewCount?.toLocaleString() || 0} reviews)
               </span>
             </div>
             
-            <div className="flex items-center mt-2">
-              {getStoreIcon(bestDeal.store.name)}
-              <span className="text-gray-700 text-sm">{bestDeal.store.name}</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="flex justify-between items-end mt-4">
-          <div>
-            {bestDeal.originalPrice && (
-              <div className="text-gray-500 text-sm line-through">
-                {formatPrice(bestDeal.originalPrice)}
-              </div>
-            )}
-            <div className="text-2xl font-bold text-gray-800">{formatPrice(bestDeal.price)}</div>
-            {discountPercentage > 0 && (
-              <div className="text-secondary text-sm font-medium">{discountPercentage}% off</div>
-            )}
-          </div>
-          
-          <a 
-            href={bestDeal.url} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition text-sm flex items-center"
-          >
-            <span>Buy Now</span>
-            <ExternalLink className="ml-2 h-3 w-3" />
-          </a>
-        </div>
-        
-        {/* Offers section */}
-        {bestDeal.offers && bestDeal.offers.length > 0 && (
-          <div className="mt-4 pt-4 border-t border-gray-100">
-            <div className="text-sm font-medium text-gray-700 mb-2">Available Offers:</div>
-            <div className="flex flex-col gap-2">
-              {bestDeal.offers.map((offer, index) => (
-                <div key={index} className="flex items-start gap-2">
-                  <svg 
-                    className="text-accent h-4 w-4 mt-0.5" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                  </svg>
-                  <span className="text-sm text-gray-600">{offer}</span>
+            {/* Our recommendation */}
+            <div className="mt-3 mb-3">
+              <Badge className="bg-green-600">Our Recommendation</Badge>
+              <div className="mt-1 flex items-center gap-2">
+                <Award className="text-green-600 h-5 w-5" />
+                <div>
+                  <span className="font-semibold text-green-700">Buy from {recommendation.store}</span>
+                  <p className="text-xs text-gray-600">{recommendation.reason}</p>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
-        )}
+        </div>
+        
+        {/* Platform comparison tabs */}
+        <div className="mt-4 pt-4 border-t border-gray-200">
+          <Tabs defaultValue={bestDeal.store.name.toLowerCase()} className="w-full">
+            <TabsList className="grid grid-cols-4 mb-4">
+              {sortedPrices.map(price => (
+                <TabsTrigger 
+                  key={price.store.id} 
+                  value={price.store.name.toLowerCase()}
+                  className="flex items-center gap-1"
+                >
+                  {getStoreIcon(price.store.name)}
+                  <span className="hidden sm:inline">{price.store.name}</span>
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            
+            {sortedPrices.map(price => (
+              <TabsContent key={price.store.id} value={price.store.name.toLowerCase()}>
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex justify-between mb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        {getStoreIcon(price.store.name)}
+                        <span className="font-semibold">{price.store.name}</span>
+                      </div>
+                      <div className="flex items-center mt-1 gap-1">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm text-gray-700">
+                          Delivery: {price.deliveryDays || '3-5 days'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      {price.originalPrice && (
+                        <div className="text-gray-500 text-sm line-through">
+                          {formatPrice(price.originalPrice)}
+                        </div>
+                      )}
+                      <div className="text-2xl font-bold text-gray-800">{formatPrice(price.price)}</div>
+                      {getDiscountPercentage(price) > 0 && (
+                        <div className="text-green-600 text-sm font-medium">{getDiscountPercentage(price)}% off</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center mb-3">
+                    {renderRating(price.rating || 0)}
+                    <span className="ml-2 text-sm text-gray-600">
+                      {((price.rating || 0) / 10).toFixed(1)} ({price.reviewCount?.toLocaleString() || 0} reviews)
+                    </span>
+                  </div>
+                  
+                  {/* Offers section */}
+                  {price.offers && price.offers.length > 0 && (
+                    <div className="mb-4">
+                      <div className="text-sm font-medium text-gray-700 mb-2">Available Offers:</div>
+                      <div className="flex flex-col gap-2">
+                        {price.offers.map((offer, index) => (
+                          <div key={index} className="flex items-start gap-2">
+                            <svg 
+                              className="text-accent h-4 w-4 mt-0.5 flex-shrink-0" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
+                            <span className="text-sm text-gray-600">{offer}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-end">
+                    <a 
+                      href={price.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="bg-primary hover:bg-primary-dark text-white font-medium py-2 px-4 rounded-lg transition flex items-center"
+                    >
+                      <span>Buy Now</span>
+                      <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                  </div>
+                </div>
+              </TabsContent>
+            ))}
+          </Tabs>
+        </div>
       </div>
     </div>
   );

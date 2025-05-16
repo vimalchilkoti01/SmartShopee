@@ -188,14 +188,75 @@ export class MemStorage implements IStorage {
       category: "Electronics",
     });
     
-    // Create some demo prices at different stores
+    // Create prices for all 4 major platforms (not Myntra)
+    // Use more realistic prices based on product type
     const stores = await this.getAllStores();
-    const basePrice = 50000 + Math.floor(Math.random() * 20000); // Random price between 50,000 and 70,000
+    let basePrice = 0;
     
-    await Promise.all(stores.slice(0, 3).map(async (store, index) => {
-      // Each store has a slightly different price
-      const storePrice = basePrice - (index * 2000);
-      const originalPrice = storePrice + Math.floor(storePrice * 0.1);
+    // Set appropriate base price range based on product type
+    if (query.toLowerCase().includes('iphone') || query.toLowerCase().includes('samsung') || 
+        query.toLowerCase().includes('pixel')) {
+      basePrice = 70000 + Math.floor(Math.random() * 30000); // Phones: 70k-100k
+    } else if (query.toLowerCase().includes('macbook') || query.toLowerCase().includes('laptop')) {
+      basePrice = 90000 + Math.floor(Math.random() * 50000); // Laptops: 90k-140k
+    } else if (query.toLowerCase().includes('tv') || query.toLowerCase().includes('television')) {
+      basePrice = 40000 + Math.floor(Math.random() * 80000); // TVs: 40k-120k
+    } else if (query.toLowerCase().includes('headphone') || query.toLowerCase().includes('earbuds')) {
+      basePrice = 10000 + Math.floor(Math.random() * 15000); // Audio: 10k-25k
+    } else {
+      basePrice = 25000 + Math.floor(Math.random() * 50000); // Other electronics: 25k-75k
+    }
+    
+    // Only include Amazon, Flipkart, Croma, and Reliance Digital
+    const includedStores = stores.filter(store => 
+      ['Amazon', 'Flipkart', 'Croma', 'Reliance Digital'].includes(store.name)
+    );
+    
+    // Create prices for each included store with realistic variations
+    await Promise.all(includedStores.map(async (store, index) => {
+      // Each store has a different price strategy
+      let storePrice = basePrice;
+      let deliveryDays = "2-3 days";
+      let storeSpecificOffers = [];
+      
+      // Store-specific price variations and offers
+      if (store.name === "Amazon") {
+        storePrice = basePrice - Math.floor(basePrice * 0.02); // Amazon slightly cheaper
+        deliveryDays = "1-2 days";
+        storeSpecificOffers = [
+          "10% Instant Discount with HDFC Credit Cards",
+          "No-Cost EMI available",
+          "Prime delivery available"
+        ];
+      } else if (store.name === "Flipkart") {
+        storePrice = basePrice - Math.floor(basePrice * 0.03); // Flipkart cheapest
+        deliveryDays = "2-3 days";
+        storeSpecificOffers = [
+          "Extra 5% off with Flipkart Axis Bank Card",
+          "No-Cost EMI available", 
+          "SuperCoins Reward"
+        ];
+      } else if (store.name === "Croma") {
+        storePrice = basePrice + Math.floor(basePrice * 0.01); // Croma slightly more
+        deliveryDays = "3-5 days";
+        storeSpecificOffers = [
+          "Additional warranty available",
+          "Free installation",
+          "Exchange offer available"
+        ];
+      } else if (store.name === "Reliance Digital") {
+        storePrice = basePrice;
+        deliveryDays = "3-4 days";
+        storeSpecificOffers = [
+          "5% cashback with Reliance One",
+          "Free extended warranty",
+          "EMI starting ₹2,999/month"
+        ];
+      }
+      
+      // Add randomization to make it realistic
+      storePrice = storePrice + Math.floor((Math.random() * 2000) - 1000);
+      const originalPrice = storePrice + Math.floor(storePrice * (0.08 + Math.random() * 0.07)); // 8-15% markup
       const discount = Math.floor((originalPrice - storePrice) / originalPrice * 100);
       
       await this.createProductPrice({
@@ -204,11 +265,12 @@ export class MemStorage implements IStorage {
         price: storePrice,
         originalPrice,
         discount,
-        rating: 40 + Math.floor(Math.random() * 10), // Rating between 4.0 and 5.0
+        rating: 35 + Math.floor(Math.random() * 15), // Rating between 3.5 and 5.0
         reviewCount: 500 + Math.floor(Math.random() * 2000),
         url: `${store.website}/product/${product.id}`,
         inStock: true,
-        offers: ["10% Instant Discount with HDFC Credit Cards", "No-Cost EMI available"]
+        offers: storeSpecificOffers,
+        deliveryDays: deliveryDays
       });
     }));
     

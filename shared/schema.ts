@@ -109,5 +109,8 @@ export type SearchHistory = typeof searchHistory.$inferSelect;
 
 // Combined product and price data
 export type ProductWithPrices = Product & {
-  prices: (ProductPrice & { store: Store })[];
+  prices: (ProductPrice & { 
+    store: Store;
+    deliveryDays?: string;
+  })[];
 };
