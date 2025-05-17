@@ -3,6 +3,7 @@ import {
   Store, InsertStore, ProductPrice, InsertProductPrice,
   SearchHistory, InsertSearchHistory, ProductWithPrices
 } from "@shared/schema";
+import { getProductPrices } from './services/priceComparison';
 
 // Modify the interface with any CRUD methods
 // you might need
@@ -110,7 +111,14 @@ export class MemStorage implements IStorage {
   async createProduct(insertProduct: InsertProduct): Promise<Product> {
     const id = this.currentProductId++;
     const now = new Date();
-    const product: Product = { ...insertProduct, id, createdAt: now };
+    const product: Product = { 
+      ...insertProduct, 
+      id, 
+      createdAt: now,
+      description: insertProduct.description ?? null,
+      imageUrl: insertProduct.imageUrl ?? null,
+      category: insertProduct.category ?? null
+    };
     this.products.set(id, product);
     return product;
   }
@@ -132,7 +140,11 @@ export class MemStorage implements IStorage {
   
   async createStore(insertStore: InsertStore): Promise<Store> {
     const id = this.currentStoreId++;
-    const store: Store = { ...insertStore, id };
+    const store: Store = { 
+      ...insertStore, 
+      id,
+      logoUrl: insertStore.logoUrl ?? null
+    };
     this.stores.set(id, store);
     return store;
   }
@@ -155,28 +167,100 @@ export class MemStorage implements IStorage {
   async createProductPrice(insertProductPrice: InsertProductPrice): Promise<ProductPrice> {
     const id = this.currentProductPriceId++;
     const now = new Date();
-    const productPrice: ProductPrice = { ...insertProductPrice, id, updatedAt: now };
+    const productPrice: ProductPrice = { 
+      ...insertProductPrice, 
+      id, 
+      updatedAt: now,
+      originalPrice: insertProductPrice.originalPrice ?? null,
+      discount: insertProductPrice.discount ?? null,
+      rating: insertProductPrice.rating ?? null,
+      reviewCount: insertProductPrice.reviewCount ?? null,
+      inStock: insertProductPrice.inStock ?? null,
+      offers: (Array.isArray(insertProductPrice.offers) && insertProductPrice.offers.every(x => typeof x === 'string')) ? insertProductPrice.offers : null
+    };
     this.productPrices.set(id, productPrice);
     return productPrice;
   }
   
   // Search methods
   async searchProducts(query: string): Promise<ProductWithPrices[]> {
-    // In a real implementation, this would perform a more complex search
-    const matchedProducts = await this.getProductsByName(query);
-    
-    // If no real products found, create dummy product results for demo
-    if (matchedProducts.length === 0 && query.trim() !== "") {
-      const demoProduct = await this.createDemoProduct(query);
-      matchedProducts.push(demoProduct);
+    try {
+      // Get real prices from the price comparison API
+      const priceData = await getProductPrices(query);
+      
+      if (priceData.length === 0) {
+        // Fallback to demo data if no results found
+        const matchedProducts = await this.getProductsByName(query);
+        if (matchedProducts.length === 0 && query.trim() !== "") {
+          const demoProduct = await this.createDemoProduct(query);
+          matchedProducts.push(demoProduct);
+        }
+        return Promise.all(
+          matchedProducts.map(async (product) => {
+            const prices = await this.getProductPricesByProductId(product.id);
+            return { ...product, prices };
+          })
+        );
+      }
+
+      // Create a product from the search results
+      const product = await this.createProduct({
+        name: query,
+        description: `Search results for ${query}`,
+        imageUrl: null,
+        category: "Electronics"
+      });
+
+      // Create prices for each store
+      const prices = await Promise.all(
+        priceData.map(async (price) => {
+          let store = await this.getStoreByName(price.store);
+          if (!store) {
+            store = await this.createStore({
+              name: price.store,
+              logoUrl: null,
+              website: `https://${price.store.toLowerCase().replace(/\s+/g, '')}.com`
+            });
+          }
+
+          return this.createProductPrice({
+            productId: product.id,
+            storeId: store.id,
+            price: price.price,
+            originalPrice: price.originalPrice || null,
+            discount: null,
+            rating: price.rating || null,
+            reviewCount: price.reviewCount || null,
+            url: price.url,
+            inStock: true,
+            offers: []
+          });
+        })
+      );
+
+      return [{
+        ...product,
+        prices: prices.map(price => ({
+          ...price,
+          store: this.stores.get(price.storeId)!,
+          deliveryDays: priceData.find(p => p.store === this.stores.get(price.storeId)!.name)?.deliveryDays
+        }))
+      }];
+    } catch (error) {
+      console.error('Error in searchProducts:', error);
+      // Fallback to demo data if there's an error
+      const matchedProducts = await this.getProductsByName(query);
+      if (matchedProducts.length === 0 && query.trim() !== "") {
+        const demoProduct = await this.createDemoProduct(query);
+        matchedProducts.push(demoProduct);
+      }
+      return Promise.all(
+        matchedProducts.map(async (product) => {
+          const prices = await this.getProductPricesByProductId(product.id);
+          return { ...product, prices };
+        })
+      );
     }
-    
-    return Promise.all(
-      matchedProducts.map(async (product) => {
-        const prices = await this.getProductPricesByProductId(product.id);
-        return { ...product, prices };
-      })
-    );
   }
   
   private async createDemoProduct(query: string): Promise<Product> {
@@ -333,7 +417,12 @@ export class MemStorage implements IStorage {
   async addSearchHistory(insertSearchHistory: InsertSearchHistory): Promise<SearchHistory> {
     const id = this.currentSearchHistoryId++;
     const now = new Date();
-    const searchHistory: SearchHistory = { ...insertSearchHistory, id, timestamp: now };
+    const searchHistory: SearchHistory = { 
+      ...insertSearchHistory, 
+      id, 
+      timestamp: now,
+      userId: insertSearchHistory.userId ?? null
+    };
     this.searchHistories.set(id, searchHistory);
     return searchHistory;
   }
