@@ -1,0 +1,17 @@
+All rights reserved.
+
+Copyright © 2025 beingByte.
+Project Registration No.: BYT-2024-IN-982143
+
+This software project, titled "SmartShopee/beingByte" is the intellectual property of Vimal Chilkoti, developed originally under AWS submission requirements.
+
+Unauthorized copying, distribution, presentation, or submission of this code, in part or full, is strictly prohibited under government honor code and may result in legal action.
+
+Any individual or entity found replicating or misrepresenting this work will be subject to disciplinary and/or legal proceedings.
+
+Original Repository: https://github.com/vimalchilkoti01/SmartShopee
+Issued Date: 17/05/2025
+
+Verified by: ByteCode Academic Projects Registry (BCAPR)
+
+~Government of India
